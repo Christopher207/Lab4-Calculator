@@ -124,67 +124,72 @@ class MainActivity : AppCompatActivity() {
             historia = ""
             tvPantalla.text = historia
         }
-        var terminos = emptyArray<String>()
-        var armandoTermino = ""
-        fun calcularResultado(operaciones: Array<String>): Double {
-            // Lista para almacenar los números y operadores después de resolver las operaciones de multiplicación y división
-            val numerosYOperadores = mutableListOf<Any>()
 
-            // Resuelve las operaciones de multiplicación y división y guarda el resultado en una nueva lista
-            var i = 0
-            while (i < operaciones.size) {
-                val elemento = operaciones[i]
-                if (elemento == "*" || elemento == "/") {
-                    numerosYOperadores.add(elemento)
-                } else {
-                    try {
-                        val numero = elemento.toDouble()
-                        if (numerosYOperadores.isNotEmpty() && numerosYOperadores.last() is Double) {
-                            val operador = numerosYOperadores.removeAt(numerosYOperadores.size - 1) as String
-                            val numeroAnterior = numerosYOperadores.removeAt(numerosYOperadores.size - 1) as Double
-                            val resultado = if (operador == "*") numeroAnterior * numero else numeroAnterior / numero
-                            numerosYOperadores.add(resultado)
-                        } else {
-                            numerosYOperadores.add(numero)
-                        }
-                    } catch (e: NumberFormatException) {
-                        // Si el elemento no es un número, se asume que es un operador y se ignora
-                    }
+        fun divYmult(terminos: Array<String>): Array<String> {
+            fun evaluarOperacion(index: Int, operador: String, array: Array<String>): Array<String> {
+                if (index < 1 || index + 1 >= array.size) {
+                    throw IllegalArgumentException("Índice fuera de rango")
                 }
-                i++
+
+                val num1 = array[index - 1].toFloat()
+                val num2 = array[index + 1].toFloat()
+                val resultado = when (operador) {
+                    "x" -> num1 * num2
+                    "/" -> num1 / num2
+                    else -> throw IllegalArgumentException("Operador no válido: $operador")
+                }
+                array[index - 1] = resultado.toString()
+                return array.take(index).plus(array.drop(index + 2)).toTypedArray()
+            }
+            val index = terminos.indexOfFirst { it == "x" || it == "/" }
+            return if (index != -1) {
+                divYmult(evaluarOperacion(index, terminos[index], terminos))
+            } else {
+                terminos
+            }
+        }
+        fun adYsus(terminos: Array<String>): Array<String> {
+            fun evaluarOperacion(index: Int, operador: String, array: Array<String>): Array<String> {
+                if (index < 1 || index + 1 >= array.size) {
+                    throw IllegalArgumentException("Índice fuera de rango")
+                }
+
+                val num1 = array[index - 1].toFloat()
+                val num2 = array[index + 1].toFloat()
+                val resultado = when (operador) {
+                    "+" -> num1 + num2
+                    "-" -> num1 - num2
+                    else -> throw IllegalArgumentException("Operador no válido: $operador")
+                }
+                array[index - 1] = resultado.toString()
+                return array.take(index).plus(array.drop(index + 2)).toTypedArray()
             }
 
-            // Calcula el resultado final teniendo en cuenta las operaciones de suma y resta
-            var resultadoFinal = numerosYOperadores[0] as Double
-            i = 1
-            while (i < numerosYOperadores.size) {
-                val operador = numerosYOperadores[i] as String
-                val numeroSiguiente = numerosYOperadores[i + 1] as Double
-                if (operador == "+") {
-                    resultadoFinal += numeroSiguiente
-                } else if (operador == "-") {
-                    resultadoFinal -= numeroSiguiente
-                }
-                i += 2
+            val index = terminos.indexOfFirst { it == "+" || it == "-" }
+            return if (index != -1) {
+                adYsus(evaluarOperacion(index, terminos[index], terminos))
+            } else {
+                terminos
             }
-
-            return resultadoFinal
         }
 
-
-
         btnIgual.setOnClickListener{
+            var terminos = emptyArray<String>()
+            var armandoTermino = ""
             for(n in historia){
                 if(n=='/' || n=='x' || n=='+' || n=='-'){
                     terminos+=armandoTermino
                     terminos+=n.toString()
+                    armandoTermino=""
                 }else{
                     armandoTermino+=n
                 }
             }
-            tvPantalla.text = calcularResultado(terminos).toString()
-
-
+            terminos+=armandoTermino
+            terminos = divYmult(terminos)
+            terminos = adYsus(terminos)
+            tvPantalla.text = terminos[0]
+            historia = ""
         }
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
