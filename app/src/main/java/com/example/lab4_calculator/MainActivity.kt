@@ -1,7 +1,6 @@
 package com.example.lab4_calculator
 
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
